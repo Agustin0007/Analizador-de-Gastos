@@ -1,0 +1,150 @@
+.settings-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.settings-section {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.settings-section h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.category-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.category-input input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.category-input button {
+  padding: 10px 20px;
+  background: #36A2EB;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.category-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.category-controls input {
+  width: 120px;
+  padding: 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.category-controls button {
+  padding: 8px 15px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.notifications-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.notifications-settings label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+.save-button {
+  padding: 12px 30px;
+  background: #36A2EB;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-button:hover {
+  background: #2185d0;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 15px;
+  }
+
+  .category-item {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .category-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
