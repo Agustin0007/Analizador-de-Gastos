@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
+import { budgetService } from '../services/budgetService';
 import { FiTrash2, FiEdit, FiPlusCircle, FiX } from 'react-icons/fi';
 import ExpenseForm from '../components/ExpenseForm';
 import '../styles/expense-list.css';
+import emailjs from 'emailjs-com';
+import { toast } from 'react-toastify';
 
 export default function ExpenseList() {
   const [expenses, setExpenses] = useState([]);
@@ -129,3 +132,21 @@ export default function ExpenseList() {
     </div>
   );
 }
+
+const handleAddExpense = async (expense) => {
+  try {
+    const docRef = await addDoc(collection(db, 'expenses'), {
+      ...expense,
+      userId: user.uid,
+      timestamp: new Date().toISOString()
+    });
+
+    await budgetService.checkBudgetLimits(user.uid, expense);
+    
+    setExpenses([...expenses, { ...expense, id: docRef.id }]);
+    toast.success('Gasto agregado exitosamente');
+  } catch (error) {
+    console.error('Error adding expense:', error);
+    toast.error('Error al agregar el gasto');
+  }
+};
