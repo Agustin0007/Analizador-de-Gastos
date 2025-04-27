@@ -1,23 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, Filler } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
-import '../styles/statistics.css';
-import { Line, Bar } from 'react-chartjs-2';
-import {
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-} from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, Filler, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title } from 'chart.js';
+import { Pie, Line, Bar } from 'react-chartjs-2';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FiDownload, FiFilePlus } from 'react-icons/fi';
+import '../styles/statistics.css';
+// Remove or comment out this line as we're creating the Statistics component here
+// import { Statistics } from '../components/Statistics';
 
 ChartJS.register(
   CategoryScale,
@@ -32,36 +25,38 @@ ChartJS.register(
   Filler  // Añadir Filler aquí
 );
 
-export default function Statistics() {
-  // Estados
+const INITIAL_FILTERS = {
+  dateFrom: '',
+  dateTo: '',
+  minAmount: '',
+  maxAmount: '',
+  categories: []
+};
+
+const CHART_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+
+// Rename the component to avoid conflicts
+const StatisticsPage = () => {
+  // Add this with other state declarations at the top
+  const [tags, setTags] = useState([]);
+  
   const { user } = useAuth();
   const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('monthly');
-  const [compareMode, setCompareMode] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState('current');
-  const [filters, setFilters] = useState({
-    dateFrom: '',
-    dateTo: '',
-    minAmount: '',
-    maxAmount: '',
-    categories: []
-  });
-  const [tags, setTags] = useState([]);
-  const [newTag, setNewTag] = useState('');
+  const [compareMode, setCompareMode] = useState(false);
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [savingsGoal, setSavingsGoal] = useState(0);
-  const [predictedExpenses, setPredictedExpenses] = useState(null);
   const [budget, setBudget] = useState(0);
 
-  // Funciones
   const fetchExpenses = useCallback(async () => {
     if (!user) return;
     try {
-      const expensesRef = collection(db, 'expenses');
-      const q = query(expensesRef, where('userId', '==', user.uid));
-      const querySnapshot = await getDocs(q);
-      const expensesData = querySnapshot.docs.map(doc => ({
+      setLoading(true);
+      const q = query(collection(db, 'expenses'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const expensesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
@@ -76,6 +71,59 @@ export default function Statistics() {
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return (
+        (!filters.dateFrom || expenseDate >= new Date(filters.dateFrom)) &&
+        (!filters.dateTo || expenseDate <= new Date(filters.dateTo)) &&
+        (!filters.minAmount || expense.amount >= Number(filters.minAmount)) &&
+        (!filters.maxAmount || expense.amount <= Number(filters.maxAmount))
+      );
+    });
+  }, [expenses, filters]);
+
+  const expensesByCategory = useMemo(() => {
+    return filteredExpenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      return acc;
+    }, {});
+  }, [filteredExpenses]);
+
+  const expensesByPeriod = useMemo(() => {
+    return filteredExpenses.reduce((acc, expense) => {
+      const date = new Date(expense.date);
+      const key = date.toLocaleDateString('es-ES', 
+        period === 'weekly' ? { weekday: 'short' } :
+        period === 'yearly' ? { year: 'numeric' } :
+        { month: 'short' }
+      );
+      acc[key] = (acc[key] || 0) + expense.amount;
+      return acc;
+    }, {});
+  }, [filteredExpenses, period]);
+
+  const comparativeData = useMemo(() => {
+    const currentDate = new Date();
+    return filteredExpenses.reduce((acc, expense) => {
+      const expenseDate = new Date(expense.date);
+      const isCurrentPeriod = expenseDate.getMonth() === currentDate.getMonth();
+      const key = isCurrentPeriod ? 'current' : 'previous';
+      acc[key][expense.category] = (acc[key][expense.category] || 0) + expense.amount;
+      return acc;
+    }, { current: {}, previous: {} });
+  }, [filteredExpenses]);
+
+  const predictedExpenses = useMemo(() => {
+    if (filteredExpenses.length < 2) return null;
+    const monthlyTotals = filteredExpenses.reduce((acc, expense) => {
+      const month = new Date(expense.date).getMonth();
+      acc[month] = (acc[month] || 0) + expense.amount;
+      return acc;
+    }, {});
+    return Math.round(Object.values(monthlyTotals).reduce((a, b) => a + b, 0) / Object.values(monthlyTotals).length);
+  }, [filteredExpenses]);
 
   const getFilteredExpenses = useCallback(() => {
     return expenses.filter(expense => {
@@ -441,4 +489,7 @@ export default function Statistics() {
     </div>
   );
 }
+
+// Change the export to match the new name
+export default StatisticsPage;
 

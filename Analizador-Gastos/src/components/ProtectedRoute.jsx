@@ -1,12 +1,17 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { memo } from 'react';
 
-export function ProtectedRoute({ children }) {
+export const ProtectedRoute = memo(({ children }) => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) {
+    return <div className="loading-container">Cargando...</div>;
+  }
   
-  if (!user) return <Navigate to="/login" />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
-}
+});

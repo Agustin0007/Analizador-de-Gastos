@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { FiDollarSign, FiCalendar, FiTag, FiFileText } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const CATEGORIES = [
   'Alimentación',
@@ -15,25 +16,44 @@ const CATEGORIES = [
   'Otros'
 ];
 
+const INITIAL_FORM_STATE = {
+  amount: '',
+  description: '',
+  category: '',
+  date: new Date().toISOString().split('T')[0]
+};
+
 export default function ExpenseForm({ expense, onExpenseAdded }) {
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     if (expense) {
-      setAmount(expense.amount.toString());
-      setDescription(expense.description || '');
-      setCategory(expense.category);
-      setDate(expense.date);
+      setFormData({
+        amount: expense.amount.toString(),
+        description: expense.description || '',
+        category: expense.category,
+        date: expense.date
+      });
     }
   }, [expense]);
 
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setFormData(INITIAL_FORM_STATE);
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const { amount, category, date } = formData;
     if (!amount || !category || !date) return;
 
     setLoading(true);
@@ -41,7 +61,7 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
       const expenseData = {
         userId: user.uid,
         amount: parseFloat(amount),
-        description,
+        description: formData.description,
         category,
         date,
         createdAt: new Date().toISOString()
@@ -52,14 +72,17 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
           ...expenseData,
           updatedAt: new Date().toISOString()
         });
+        toast.success('Gasto actualizado exitosamente');
       } else {
         await addDoc(collection(db, 'expenses'), expenseData);
+        toast.success('Gasto registrado exitosamente');
+        resetForm();
       }
 
       onExpenseAdded();
     } catch (error) {
       console.error('Error saving expense:', error);
-      alert('Error al guardar el gasto');
+      toast.error('Error al guardar el gasto');
     } finally {
       setLoading(false);
     }
@@ -74,8 +97,9 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
             <FiDollarSign />
             <input
               type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              name="amount"
+              value={formData.amount}
+              onChange={handleChange}
               placeholder="Monto"
               required
               min="0"
@@ -88,8 +112,9 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
           <label>
             <FiTag />
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
               required
             >
               <option value="">Selecciona una categoría</option>
@@ -105,8 +130,9 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
             <FiCalendar />
             <input
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
               required
             />
           </label>
@@ -117,8 +143,9 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
             <FiFileText />
             <input
               type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
               placeholder="Descripción (opcional)"
             />
           </label>

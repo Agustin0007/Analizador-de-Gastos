@@ -1,0 +1,109 @@
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+  padding: 2rem;
+}
+
+.content-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.page-title {
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.action-button {
+  background: linear-gradient(45deg, #6a11cb, #2575fc);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  padding: 0.8rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.data-table th {
+  color: rgba(255, 255, 255, 0.8);
+  padding: 1rem;
+  text-align: left;
+}
+
+.data-table td {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  color: #fff;
+}
+
+.data-table tr td:first-child {
+  border-radius: 12px 0 0 12px;
+}
+
+.data-table tr td:last-child {
+  border-radius: 0 12px 12px 0;
+}
+
+.chart-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.particles {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  animation: moveParticle 15s infinite linear;
+}
+
+@keyframes moveParticle {
+  0% {
+    transform: translate(-100px, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(100vw + 100px), calc(-100vh - 100px));
+    opacity: 0;
+  }
+}

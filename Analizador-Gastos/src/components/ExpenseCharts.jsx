@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Line, Pie } from 'react-chartjs-2';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -25,6 +25,30 @@ ChartJS.register(
   Legend,
   ArcElement
 );
+
+const CATEGORIES = [
+  'Alimentación',
+  'Transporte',
+  'Vivienda',
+  'Servicios',
+  'Entretenimiento',
+  'Salud',
+  'Educación',
+  'Otros'
+];
+
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+const CHART_COLORS = [
+  '#FF6384',
+  '#36A2EB',
+  '#FFCE56',
+  '#4BC0C0',
+  '#9966FF',
+  '#FF9F40',
+  '#FF6384',
+  '#C9CBCF'
+];
 
 export default function ExpenseCharts() {
   const [expenses, setExpenses] = useState([]);
@@ -55,49 +79,43 @@ export default function ExpenseCharts() {
     fetchExpenses();
   }, [user]);
 
-  const categories = ['Alimentación', 'Transporte', 'Vivienda', 'Servicios', 'Entretenimiento', 'Salud', 'Educación', 'Otros'];
-  
-  const categoryTotals = categories.map(category => 
-    expenses
-      .filter(expense => expense.category === category)
-      .reduce((sum, expense) => sum + expense.amount, 0)
-  );
+  const { categoryData, monthlyData } = useMemo(() => {
+    const categoryTotals = CATEGORIES.map(category => 
+      expenses
+        .filter(expense => expense.category === category)
+        .reduce((sum, expense) => sum + (expense.amount || 0), 0)
+    );
 
-  const categoryData = {
-    labels: categories,
-    datasets: [{
-      data: categoryTotals,
-      backgroundColor: [
-        '#FF6384',
-        '#36A2EB',
-        '#FFCE56',
-        '#4BC0C0',
-        '#9966FF',
-        '#FF9F40',
-        '#FF6384',
-        '#C9CBCF'
-      ]
-    }]
-  };
+    const monthlyTotals = Array(12).fill(0).map((_, month) => 
+      expenses
+        .filter(expense => new Date(expense.date).getMonth() === month)
+        .reduce((sum, expense) => sum + (expense.amount || 0), 0)
+    );
 
-  const monthlyData = {
-    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-    datasets: [{
-      label: 'Gastos por Mes',
-      data: Array(12).fill(0).map((_, month) => 
-        expenses
-          .filter(expense => new Date(expense.date).getMonth() === month)
-          .reduce((sum, expense) => sum + expense.amount, 0)
-      ),
-      borderColor: '#36A2EB',
-      backgroundColor: 'rgba(54, 162, 235, 0.2)',
-      borderWidth: 2,
-      fill: true,
-      tension: 0.4
-    }]
-  };
+    return {
+      categoryData: {
+        labels: CATEGORIES,
+        datasets: [{
+          data: categoryTotals,
+          backgroundColor: CHART_COLORS
+        }]
+      },
+      monthlyData: {
+        labels: MONTHS,
+        datasets: [{
+          label: 'Gastos por Mes',
+          data: monthlyTotals,
+          borderColor: '#36A2EB',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }]
+      }
+    };
+  }, [expenses]);
 
-  const commonOptions = {
+  const commonOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -106,9 +124,7 @@ export default function ExpenseCharts() {
         position: 'bottom',
         labels: {
           padding: 20,
-          font: {
-            size: 12
-          }
+          font: { size: 12 }
         }
       },
       tooltip: {
@@ -117,35 +133,7 @@ export default function ExpenseCharts() {
         }
       }
     }
-  };
-
-  const pieOptions = {
-    ...commonOptions,
-    plugins: {
-      ...commonOptions.plugins,
-      legend: {
-        ...commonOptions.plugins.legend,
-        display: true
-      }
-    }
-  };
-
-  const lineOptions = {
-    ...commonOptions,
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: (value) => `$${value}`
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        }
-      }
-    }
-  };
+  }), []);
 
   if (!expenses.length) {
     return <div className="charts-container">No hay datos para mostrar</div>;
@@ -156,14 +144,30 @@ export default function ExpenseCharts() {
       <div className="chart-box">
         <h3>Distribución de Gastos por Categoría</h3>
         <div className="chart-wrapper">
-          <Pie data={categoryData} options={pieOptions} />
+          <Pie data={categoryData} options={commonOptions} />
         </div>
       </div>
       
       <div className="chart-box">
         <h3>Gastos Mensuales</h3>
         <div className="chart-wrapper">
-          <Line data={monthlyData} options={lineOptions} />
+          <Line 
+            data={monthlyData} 
+            options={{
+              ...commonOptions,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    callback: (value) => `$${value}`
+                  }
+                },
+                x: {
+                  grid: { display: false }
+                }
+              }
+            }} 
+          />
         </div>
       </div>
     </div>

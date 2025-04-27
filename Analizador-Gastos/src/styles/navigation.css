@@ -1,0 +1,101 @@
+.navigation {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f6fa;
+  padding: 1rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  color: #2d3436;
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
+  margin: 0 8px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nav-link:hover {
+  background-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link svg {
+  font-size: 1.4em;
+  transition: transform 0.3s ease;
+}
+
+.nav-link:hover svg {
+  transform: scale(1.2);
+}
+
+.logout-link {
+  color: #ff4757;
+  background: linear-gradient(145deg, #ffffff, #fff5f5);
+  border: 1px solid #ffe5e5;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.logout-link:hover {
+  background: linear-gradient(145deg, #fff5f5, #ffe5e5);
+  color: #ff3545;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2);
+}
+
+.logout-link svg {
+  color: #ff4757;
+}
+
+.logout-link:hover svg {
+  transform: rotate(90deg) scale(1.2);
+}
+
+@media (max-width: 768px) {
+  .navigation {
+    padding: 0.5rem;
+    justify-content: space-between;
+  }
+
+  .nav-link {
+    padding: 8px;
+    margin: 0 4px;
+  }
+
+  .nav-link span {
+    display: none;
+  }
+
+  .nav-link svg {
+    font-size: 1.6em;
+    margin: 0;
+  }
+
+  .logout-link {
+    margin-left: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navigation {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .nav-link {
+    padding: 8px;
+    margin: 0 2px;
+  }
+}

@@ -1,12 +1,18 @@
 :root {
   --primary: #2563EB;
   --primary-light: #3B82F6;
+  --primary-dark: #1D4ED8;
   --accent: #10B981;
   --background: #F3F4F6;
   --text: #1F2937;
+  --text-muted: #6B7280;
   --danger: #EF4444;
   --success: #10B981;
   --warning: #F59E0B;
+  --border-radius: 8px;
+  --transition: 0.2s ease;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -16,17 +22,37 @@
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
-  background-color: var(--background);
-  color: var(--text);
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+  background-color: white;
+  color: blue;
+  line-height: 1.5;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 0.75rem;
 }
 
 .container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 clamp(1rem, 5vw, 2rem);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827;
+    --text: #F9FAFB;
+    --text-muted: #9CA3AF;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

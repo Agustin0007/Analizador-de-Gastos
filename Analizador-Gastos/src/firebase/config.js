@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getFunctions } from 'firebase/functions';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAUecPrVb0-SOIlI_g8HynKqoCPCH9YErs",
@@ -13,11 +13,35 @@ const firebaseConfig = {
   measurementId: "G-1EC9TVG79H"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const functions = getFunctions(app);
+let app;
+let auth;
+let db;
+let functions;
 
-setPersistence(auth, browserLocalPersistence);
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  functions = getFunctions(app);
+
+  // Enable offline persistence
+  setPersistence(auth, browserLocalPersistence)
+    .catch(error => console.error('Auth persistence error:', error));
+
+  enableIndexedDbPersistence(db)
+    .catch(error => {
+      if (error.code === 'failed-precondition') {
+        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+      } else if (error.code === 'unimplemented') {
+        console.warn('Browser doesn\'t support persistence');
+      }
+    });
+
+  if (process.env.NODE_ENV === 'development') {
+    connectFunctionsEmulator(functions, 'localhost', 5001);
+  }
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+}
 
 export { auth, db, functions };

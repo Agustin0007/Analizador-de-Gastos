@@ -1,57 +1,83 @@
+:root {
+  --card-radius: 12px;
+  --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --card-padding: clamp(1rem, 2vw, 1.5rem);
+  --icon-size: clamp(40px, 5vw, 48px);
+  --spacing: clamp(1rem, 2vw, 2rem);
+}
+
 .dashboard {
-  padding: 2rem;
+  padding: var(--spacing);
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 .dashboard h1 {
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing);
   color: var(--text);
+  font-size: clamp(1.5rem, 3vw, 2rem);
 }
-
+.dashboard-loading{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  
+}
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: var(--card-padding);
+  margin-bottom: var(--spacing);
 }
 
 .card {
   background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: var(--card-padding);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
   display: flex;
   align-items: center;
   gap: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .card-icon {
   background: var(--primary);
   color: white;
-  width: 48px;
-  height: 48px;
+  width: var(--icon-size);
+  height: var(--icon-size);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: calc(var(--icon-size) * 0.5);
+  transition: background-color 0.2s ease;
 }
 
 .card-info h3 {
-  font-size: 0.875rem;
-  color: var(--text);
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  color: black;
   margin-bottom: 0.5rem;
 }
 
 .amount {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
   color: var(--primary);
 }
 
 .dashboard-content {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--spacing);
 }
 
 .chart-wrapper {
@@ -60,37 +86,91 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
+  padding: var(--card-padding);
+}
+
+.chart-container {
+  background: white;
+  padding: var(--card-padding);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  min-height: clamp(300px, 50vh, 400px);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container canvas {
+  max-height: clamp(250px, 40vh, 350px);
+  width: 100% !important;
+}
+
+.recent-transactions {
+  background: white;
+  padding: var(--card-padding);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.recent-transactions h2 {
+  margin-bottom: var(--card-padding);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+@media (max-width: 1024px) {
+  .dashboard-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    padding: calc(var(--spacing) * 0.5);
+  }
+  
+  .card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-icon {
+    transition: none;
+  }
+}
+
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
 }
 
 .chart-container {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   min-height: 400px;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
-.chart-container canvas {
-  max-height: 350px;
-}
-
-.recent-transactions {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.recent-transactions h2 {
-  margin-bottom: 1rem;
+.chart-title {
   font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #2d3436;
 }
 
 @media (max-width: 768px) {
-  .dashboard-content {
+  .dashboard-charts {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .chart-container {
+    min-height: 350px;
   }
 }

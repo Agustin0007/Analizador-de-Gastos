@@ -1,24 +1,18 @@
-import { Link, Outlet } from 'react-router-dom';
-import './Layout.css';
+import { Outlet } from 'react-router-dom';
+import Navigation from './Navigation';
+import '../styles/layout.css';
 
-export default function Layout() {
+const Layout = () => {
   return (
     <div className="layout">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h1>Analizador de Gastos</h1>
+      <Navigation />
+      <main className="main-content">
+        <div className="content-container">
+          <Outlet />
         </div>
-        <div className="nav-links">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/gastos">Gastos</Link>
-          <Link to="/estadisticas">Estadísticas</Link>
-        </div>
-        <div className="nav-actions">
-        </div>
-      </nav>
-      <main>
-        <Outlet />
       </main>
     </div>
   );
-}
+};
+
+export default Layout;

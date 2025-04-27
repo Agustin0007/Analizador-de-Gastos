@@ -1,225 +1,201 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { useAuth } from '../context/AuthContext';
-import { Line, Pie, Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { FiDownload, FiFilePlus } from 'react-icons/fi';
-import '../styles/statistics.css';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-export default function Statistics() {
-  const [expenses, setExpenses] = useState([]);
-  const [period, setPeriod] = useState('monthly');
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      fetchExpenses();
-    }
-  }, [user]);
-
-  const fetchExpenses = async () => {
-    try {
-      const expensesRef = collection(db, 'expenses');
-      const q = query(expensesRef, where('userId', '==', user.uid));
-      const querySnapshot = await getDocs(q);
-      
-      const expensesData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setExpenses(expensesData);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error:', error);
-      setLoading(false);
-    }
-  };
-
-  const getExpensesByCategory = () => {
-    const categoryTotals = {};
-    expenses.forEach(expense => {
-      categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
-    });
-    return categoryTotals;
-  };
-
-  const getExpensesByPeriod = () => {
-    const periodData = {};
-    expenses.forEach(expense => {
-      const date = new Date(expense.date);
-      let periodKey;
-      
-      switch (period) {
-        case 'weekly':
-          periodKey = date.toLocaleDateString('es-ES', { weekday: 'short' });
-          break;
-        case 'monthly':
-          periodKey = date.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
-          break;
-        case 'yearly':
-          periodKey = date.toLocaleDateString('es-ES', { month: 'short' });
-          break;
-        default:
-          periodKey = date.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
-      }
-      
-      periodData[periodKey] = (periodData[periodKey] || 0) + expense.amount;
-    });
-    return periodData;
-  };
-
-  const chartData = {
-    category: {
-      labels: Object.keys(getExpensesByCategory()),
-      datasets: [{
-        label: 'Gastos por Categoría',
-        data: Object.values(getExpensesByCategory()),
-        backgroundColor: [
-          '#FF6384', '#36A2EB', '#FFCE56',
-          '#4BC0C0', '#9966FF', '#FF9F40'
-        ]
-      }]
-    },
-    period: {
-      labels: Object.keys(getExpensesByPeriod()),
-      datasets: [{
-        label: 'Gastos por Período',
-        data: Object.values(getExpensesByPeriod()),
-        fill: false,
-        borderColor: '#36A2EB',
-        tension: 0.1
-      }]
-    },
-    monthly: {
-      labels: Object.keys(getExpensesByPeriod()),
-      datasets: [{
-        label: 'Distribución Mensual',
-        data: Object.values(getExpensesByPeriod()),
-        backgroundColor: '#4BC0C0',
-        borderColor: '#4BC0C0',
-      }]
-    }
-  };
-
-  const exportToExcel = () => {
-    const workbook = XLSX.utils.book_new();
-    const data = expenses.map(expense => ({
-      Fecha: expense.date,
-      Categoría: expense.category,
-      Monto: expense.amount,
-      Descripción: expense.description || ''
-    }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Gastos");
-    XLSX.writeFile(workbook, "gastos.xlsx");
-  };
-
-  const exportToPDF = () => {
-    try {
-      const doc = new jsPDF();
-      
-      doc.text('Reporte de Gastos', 20, 20);
-
-      const tableData = expenses.map(expense => [
-        new Date(expense.date).toLocaleDateString(),
-        expense.category,
-        `$${expense.amount}`
-      ]);
-
-      autoTable(doc, {
-        head: [['Fecha', 'Categoría', 'Monto']],
-        body: tableData,
-        startY: 30,
-        theme: 'striped',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [33, 115, 70] }
-      });
-
-      doc.save('gastos.pdf');
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      alert('Error al generar el PDF');
-    }
-  };
-
-  if (loading) {
-    return <div className="loading">Cargando estadísticas...</div>;
-  }
-
-  if (!expenses.length) {
-    return <div className="no-data">No hay gastos registrados</div>;
-  }
-
-  return (
-    <div className="statistics-container">
-      <div className="header">
-        <h2>Estadísticas de Gastos</h2>
-        <div className="export-buttons">
-          <button onClick={exportToExcel} className="export-btn excel">
-            <FiDownload /> Excel
-          </button>
-          <button onClick={exportToPDF} className="export-btn pdf">
-            <FiFilePlus /> PDF
-          </button>
-        </div>
-      </div>
-
-      <div className="controls">
-        <div className="period-selector">
-          <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-            <option value="weekly">Semanal</option>
-            <option value="monthly">Mensual</option>
-            <option value="yearly">Anual</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-container">
-          <h3>Gastos por Categoría</h3>
-          <Pie data={chartData.category} />
-        </div>
-
-        <div className="chart-container">
-          <h3>Tendencia de Gastos</h3>
-          <Line data={chartData.period} />
-        </div>
-
-        <div className="chart-container">
-          <h3>Distribución Mensual</h3>
-          <Bar data={chartData.monthly} />
-        </div>
-      </div>
-    </div>
-  );
-}
+ import { useAuth } from '../context/AuthContext';
+ import { db } from '../firebase/config';
+ import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+ import '../styles/settings.css';
+ 
+ export default function Settings() {
+   const { user } = useAuth();
+   const [loading, setLoading] = useState(true);
+   const [settings, setSettings] = useState({
+     profile: {
+       displayName: '',
+       email: '',
+       currency: 'USD'
+     },
+     categories: [],
+     budgets: {},
+     notifications: {
+       email: true,
+       budgetAlerts: true,
+       weeklyReport: false
+     }
+   });
+   const [newCategory, setNewCategory] = useState('');
+ 
+   useEffect(() => {
+     loadUserSettings();
+   }, [user]);
+ 
+   const loadUserSettings = async () => {
+     if (!user) return;
+     try {
+       const settingsDoc = await getDoc(doc(db, 'userSettings', user.uid));
+       if (settingsDoc.exists()) {
+         setSettings(settingsDoc.data());
+       } else {
+         // Crear configuración inicial
+         await setDoc(doc(db, 'userSettings', user.uid), settings);
+       }
+     } catch (error) {
+       console.error('Error loading settings:', error);
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   const saveSettings = async () => {
+     if (!user) return;
+     try {
+       await updateDoc(doc(db, 'userSettings', user.uid), settings);
+       alert('Configuración guardada exitosamente');
+     } catch (error) {
+       console.error('Error saving settings:', error);
+       alert('Error al guardar la configuración');
+     }
+   };
+ 
+   const addCategory = () => {
+     if (newCategory.trim() && !settings.categories.includes(newCategory.trim())) {
+       setSettings({
+         ...settings,
+         categories: [...settings.categories, newCategory.trim()],
+         budgets: {
+           ...settings.budgets,
+           [newCategory.trim()]: 0
+         }
+       });
+       setNewCategory('');
+     }
+   };
+ 
+   const removeCategory = (category) => {
+     const { [category]: _, ...remainingBudgets } = settings.budgets;
+     setSettings({
+       ...settings,
+       categories: settings.categories.filter(c => c !== category),
+       budgets: remainingBudgets
+     });
+   };
+ 
+   const updateBudget = (category, amount) => {
+     setSettings({
+       ...settings,
+       budgets: {
+         ...settings.budgets,
+         [category]: Number(amount)
+       }
+     });
+   };
+ 
+   if (loading) return <div className="loading">Cargando configuración...</div>;
+ 
+   return (
+     <div className="settings-container">
+       <h2>Configuración</h2>
+ 
+       <section className="settings-section">
+         <h3>Perfil de Usuario</h3>
+         <div className="form-group">
+           <label>Nombre</label>
+           <input
+             type="text"
+             value={settings.profile.displayName}
+             onChange={(e) => setSettings({
+               ...settings,
+               profile: { ...settings.profile, displayName: e.target.value }
+             })}
+           />
+         </div>
+         <div className="form-group">
+           <label>Moneda</label>
+           <select
+             value={settings.profile.currency}
+             onChange={(e) => setSettings({
+               ...settings,
+               profile: { ...settings.profile, currency: e.target.value }
+             })}
+           >
+             <option value="USD">USD ($)</option>
+             <option value="EUR">EUR (€)</option>
+             <option value="ARS">ARS ($)</option>
+           </select>
+         </div>
+       </section>
+ 
+       <section className="settings-section">
+         <h3>Categorías de Gastos</h3>
+         <div className="category-input">
+           <input
+             type="text"
+             value={newCategory}
+             onChange={(e) => setNewCategory(e.target.value)}
+             placeholder="Nueva categoría..."
+           />
+           <button onClick={addCategory}>Agregar</button>
+         </div>
+         <div className="categories-list">
+           {settings.categories.map(category => (
+             <div key={category} className="category-item">
+               <span>{category}</span>
+               <div className="category-controls">
+                 <input
+                   type="number"
+                   placeholder="Presupuesto"
+                   value={settings.budgets[category]}
+                   onChange={(e) => updateBudget(category, e.target.value)}
+                 />
+                 <button onClick={() => removeCategory(category)}>Eliminar</button>
+               </div>
+             </div>
+           ))}
+         </div>
+       </section>
+ 
+       <section className="settings-section">
+         <h3>Notificaciones</h3>
+         <div className="notifications-settings">
+           <label>
+             <input
+               type="checkbox"
+               checked={settings.notifications.email}
+               onChange={(e) => setSettings({
+                 ...settings,
+                 notifications: { ...settings.notifications, email: e.target.checked }
+               })}
+             />
+             Recibir notificaciones por email
+           </label>
+           <label>
+             <input
+               type="checkbox"
+               checked={settings.notifications.budgetAlerts}
+               onChange={(e) => setSettings({
+                 ...settings,
+                 notifications: { ...settings.notifications, budgetAlerts: e.target.checked }
+               })}
+             />
+             Alertas de presupuesto
+           </label>
+           <label>
+             <input
+               type="checkbox"
+               checked={settings.notifications.weeklyReport}
+               onChange={(e) => setSettings({
+                 ...settings,
+                 notifications: { ...settings.notifications, weeklyReport: e.target.checked }
+               })}
+             />
+             Reporte semanal
+           </label>
+         </div>
+       </section>
+ 
+       <div className="settings-actions">
+         <button className="save-button" onClick={saveSettings}>
+           Guardar Cambios
+         </button>
+       </div>
+     </div>
+   );
+ }

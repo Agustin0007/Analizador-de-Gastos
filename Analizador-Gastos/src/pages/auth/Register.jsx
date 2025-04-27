@@ -1,40 +1,66 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiLock } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import '../../styles/auth.css';
 
+const INITIAL_FORM_STATE = {
+  name: '',
+  email: '',
+  password: ''
+};
+
+const ERROR_MESSAGES = {
+  'auth/email-already-in-use': 'Este correo ya está registrado',
+  'auth/invalid-email': 'Correo electrónico inválido',
+  'auth/weak-password': 'La contraseña es muy débil'
+};
+
 const Register = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { signup } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  const validateForm = () => {
+    const { name, email, password } = formData;
+    if (!name.trim()) {
+      toast.error('El nombre es requerido');
+      return false;
+    }
+    if (!email.trim()) {
+      toast.error('El correo es requerido');
+      return false;
+    }
     if (password.length < 6) {
       toast.error('La contraseña debe tener al menos 6 caracteres');
-      return;
+      return false;
     }
-    
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       setLoading(true);
-      console.log('Intentando registrar usuario:', { email, name });
+      const { name, email, password } = formData;
       await signup(email, password, name);
       toast.success('¡Registro exitoso!');
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error de registro:', error);
-      if (error.code === 'auth/email-already-in-use') {
-        toast.error('Este correo ya está registrado');
-      } else if (error.code === 'auth/invalid-email') {
-        toast.error('Correo electrónico inválido');
-      } else {
-        toast.error('Error al crear la cuenta');
-      }
+      console.error('Registration error:', error);
+      toast.error(ERROR_MESSAGES[error.code] || 'Error al crear la cuenta');
     } finally {
       setLoading(false);
     }
@@ -49,34 +75,40 @@ const Register = () => {
             <FiUser />
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
               placeholder="Nombre completo"
               required
               disabled={loading}
+              autoComplete="name"
             />
           </div>
           <div className="input-group">
             <FiMail />
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Correo electrónico"
               required
               disabled={loading}
+              autoComplete="email"
             />
           </div>
           <div className="input-group">
             <FiLock />
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="Contraseña"
               required
               disabled={loading}
               minLength={6}
+              autoComplete="new-password"
             />
           </div>
           <button 

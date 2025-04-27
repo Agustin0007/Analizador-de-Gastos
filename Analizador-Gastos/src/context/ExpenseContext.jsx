@@ -1,80 +1,79 @@
-import { useConfig } from './ConfigContext';
-import emailjs from '@emailjs/browser';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { useAuth } from './AuthContext';
+
+const ExpenseContext = createContext(null);
 
 export function ExpenseProvider({ children }) {
-  const { config } = useConfig();
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
-  const checkBudgetLimits = async (newExpense) => {
-    if (!config.budgets || !config.general.emailNotifications) return;
-
-    const today = new Date();
-    const expenseCategory = config.budgets.find(b => b.categoryId === newExpense.categoryId);
-
-    if (!expenseCategory) return;
-
-    // Obtener todos los gastos del período actual
-    const periodExpenses = expenses.filter(exp => {
-      const expDate = new Date(exp.date);
-      switch (expenseCategory.period) {
-        case 'daily':
-          return expDate.toDateString() === today.toDateString();
-        case 'weekly':
-          const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
-          return expDate >= weekStart;
-        case 'monthly':
-          return expDate.getMonth() === today.getMonth() && 
-                 expDate.getFullYear() === today.getFullYear();
-        case 'yearly':
-          return expDate.getFullYear() === today.getFullYear();
-        default:
-          return false;
-      }
-    });
-
-    const totalAmount = periodExpenses.reduce((sum, exp) => sum + exp.amount, 0) + newExpense.amount;
-    const percentage = (totalAmount / expenseCategory.amount) * 100;
-
-    if (percentage >= expenseCategory.alertThreshold) {
-      await sendAlertEmail({
-        category: config.categories.find(c => c.id === newExpense.categoryId),
-        currentAmount: totalAmount,
-        budgetAmount: expenseCategory.amount,
-        percentage,
-        period: expenseCategory.period
-      });
-    }
-  };
-
-  const sendAlertEmail = async (alertData) => {
+  const fetchExpenses = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
     try {
-      await emailjs.send(
-        'service_t3tk3ug',
-        'template_5ql5teb',
-        {
-          to_email: config.general.email,
-          category_name: alertData.category.name,
-          current_amount: new Intl.NumberFormat('es-PY', {
-            style: 'currency',
-            currency: config.general.currency
-          }).format(alertData.currentAmount),
-          budget_amount: new Intl.NumberFormat('es-PY', {
-            style: 'currency',
-            currency: config.general.currency
-          }).format(alertData.budgetAmount),
-          percentage: alertData.percentage.toFixed(1),
-          period: alertData.period
-        },
-        'S3gNeo7kvU7LlC_Wl'
+      const q = query(
+        collection(db, 'expenses'),
+        where('userId', '==', user.uid)
       );
+      const snapshot = await getDocs(q);
+      const expensesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setExpenses(expensesData);
     } catch (error) {
-      console.error('Error sending alert email:', error);
+      console.error('Error fetching expenses:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user]);
 
-  const addExpense = async (expense) => {
-    // ... código existente de addExpense ...
-    await checkBudgetLimits(expense);
-  };
+  const addExpense = useCallback(async (expenseData) => {
+    if (!user) return;
 
-  // ... resto del código ...
+    try {
+      const docRef = await addDoc(collection(db, 'expenses'), {
+        ...expenseData,
+        userId: user.uid,
+        createdAt: new Date().toISOString()
+      });
+      
+      const newExpense = {
+        id: docRef.id,
+        ...expenseData,
+        userId: user.uid
+      };
+      
+      setExpenses(prev => [...prev, newExpense]);
+      return newExpense;
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      throw error;
+    }
+  }, [user]);
+
+  const value = useMemo(() => ({
+    expenses,
+    loading,
+    addExpense,
+    fetchExpenses
+  }), [expenses, loading, addExpense, fetchExpenses]);
+
+  return (
+    <ExpenseContext.Provider value={value}>
+      {children}
+    </ExpenseContext.Provider>
+  );
+}
+
+export function useExpenses() {
+  const context = useContext(ExpenseContext);
+  if (!context) {
+    throw new Error('useExpenses must be used within an ExpenseProvider');
+  }
+  return context;
 }

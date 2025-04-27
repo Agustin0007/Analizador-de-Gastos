@@ -1,7 +1,23 @@
 import { configureStore } from '@reduxjs/toolkit';
+import { expensesReducer } from './slices/expensesSlice';
+import { authReducer } from './slices/authSlice';
+import { budgetReducer } from './slices/budgetSlice';
 
-export const store = configureStore({
+const store = configureStore({
   reducer: {
-    // Aquí agregaremos los reducers más adelante
+    expenses: expensesReducer,
+    auth: authReducer,
+    budget: budgetReducer
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['auth/setUser'],
+        ignoredPaths: ['auth.user']
+      },
+      thunk: true
+    }),
+  devTools: process.env.NODE_ENV !== 'production'
 });
+
+export default store;
