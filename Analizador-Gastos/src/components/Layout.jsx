@@ -1,11 +1,7 @@
 import { Link, Outlet } from 'react-router-dom';
-import NotificationBell from './NotificationBell';
 import './Layout.css';
-import { useNotifications } from '../hooks/useNotifications';
 
 export default function Layout() {
-  const notifications = useNotifications();
-
   return (
     <div className="layout">
       <nav className="navbar">
@@ -16,10 +12,8 @@ export default function Layout() {
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/gastos">Gastos</Link>
           <Link to="/estadisticas">Estadísticas</Link>
-          <Link to="/configuracion">Configuración</Link>
         </div>
         <div className="nav-actions">
-          <NotificationBell notifications={notifications} />
         </div>
       </nav>
       <main>

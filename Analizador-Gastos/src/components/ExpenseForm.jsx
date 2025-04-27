@@ -38,25 +38,22 @@ export default function ExpenseForm({ expense, onExpenseAdded }) {
 
     setLoading(true);
     try {
+      const expenseData = {
+        userId: user.uid,
+        amount: parseFloat(amount),
+        description,
+        category,
+        date,
+        createdAt: new Date().toISOString()
+      };
+
       if (expense) {
-        // Actualizar gasto existente
         await updateDoc(doc(db, 'expenses', expense.id), {
-          amount: parseFloat(amount),
-          description,
-          category,
-          date,
+          ...expenseData,
           updatedAt: new Date().toISOString()
         });
       } else {
-        // Crear nuevo gasto
-        await addDoc(collection(db, 'expenses'), {
-          userId: user.uid,
-          amount: parseFloat(amount),
-          description,
-          category,
-          date,
-          createdAt: new Date().toISOString()
-        });
+        await addDoc(collection(db, 'expenses'), expenseData);
       }
 
       onExpenseAdded();

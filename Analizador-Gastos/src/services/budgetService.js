@@ -1,6 +1,5 @@
 import { db } from '../firebase/config';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { createNotification } from './notificationService';
 
 export const budgetService = {
   async createBudget(userId, budgetData) {
@@ -45,24 +44,17 @@ export const budgetService = {
         const expenses = await getDocs(q);
         const totalSpent = expenses.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
-        if (totalSpent >= relevantBudget.limit) {
-          await createNotification({
-            userId,
-            type: 'warning',
-            message: `¡Alerta! Has superado el límite de ${relevantBudget.limit} en la categoría ${expense.category}`,
-            email: relevantBudget.email
-          });
-        } else if (totalSpent >= relevantBudget.limit * 0.8) {
-          await createNotification({
-            userId,
-            type: 'info',
-            message: `Estás cerca de alcanzar el límite en la categoría ${expense.category}`,
-            email: relevantBudget.email
-          });
-        }
+        return {
+          isOverLimit: totalSpent >= relevantBudget.limit,
+          isNearLimit: totalSpent >= relevantBudget.limit * 0.8,
+          totalSpent,
+          limit: relevantBudget.limit
+        };
       }
+      return null;
     } catch (error) {
       console.error('Error checking budget limits:', error);
+      return null;
     }
   }
 };
