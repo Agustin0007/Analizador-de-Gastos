@@ -43,6 +43,7 @@
   height: clamp(250px, 40vh, 300px);
   width: 100%;
   margin: 0 auto;
+  
 }
 
 @media (max-width: 768px) {

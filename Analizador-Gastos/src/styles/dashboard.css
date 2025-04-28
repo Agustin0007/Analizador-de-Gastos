@@ -87,6 +87,9 @@
   justify-content: center;
   align-items: center;
   padding: var(--card-padding);
+  background-color: white;
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
 }
 
 .chart-container {
